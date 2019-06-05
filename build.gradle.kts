@@ -1,3 +1,4 @@
+import Config.Versions.kotlin
 import com.jfrog.bintray.gradle.BintrayExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 

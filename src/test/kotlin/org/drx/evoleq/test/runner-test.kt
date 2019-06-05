@@ -18,12 +18,13 @@ package org.drx.evoleq.test
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.drx.evoleq.dsl.parallel
 import org.drx.evoleq.evolving.Parallel
 import org.junit.Test
 
 class RunnerTest {
 
-    @Test fun testRunner() = runBlocking{
+    @Test fun testRunner() = runBlocking {
         var done1 = false
         var done2 = false
         val startTime = System.currentTimeMillis()
@@ -33,7 +34,7 @@ class RunnerTest {
                 done1 = true
             }
         }
-        Parallel<Unit> {
+        parallel<Unit> {
             runTest {
                 delay(1_000)
                 done2 = true
@@ -44,7 +45,7 @@ class RunnerTest {
         assert( time >= 2_000)
     }
 
-    @Test fun testRunnersOrder()  {
+    @Test fun testRunnersOrder() = runBlocking {
         var current = 0
         IntRange(1,100).forEach {
             runTest {
@@ -69,4 +70,12 @@ class RunnerTest {
         assert(time < 9_000)
     }
 
+    @Test fun  self() = runTest{
+        val x = Parallel {
+            assert(true)
+            1
+        }
+        assert(x.get() == 1)
+
+    }
 }
