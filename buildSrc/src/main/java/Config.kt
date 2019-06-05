@@ -2,7 +2,7 @@ object Config {
 
     object Project {
         val group = "org.drx"
-        val version = "1.0.0"
+        val version = "1.0.1"
         val artifactId = "test-evoleq"
 
 		val description = "Test framework for evoleq"
@@ -18,7 +18,7 @@ object Config {
         val kotlin = "1.3.30"
         val coroutines = "1.2.0"
         val junit = "4.12"
-		val evoleq = "1.0.3"
+		val evoleq = "1.1.0"
     }
 
     object Dependencies {
