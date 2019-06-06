@@ -15,9 +15,7 @@
  */
 package org.drx.evoleq.test
 
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.drx.evoleq.dsl.parallel
 import org.drx.evoleq.evolving.Parallel
 import org.junit.Test
@@ -56,9 +54,11 @@ class RunnerTest {
         }
     }
 
-    @Test fun testRunnerTimeout() {
-        val startTime = System.currentTimeMillis()
+    @Test fun testRunnerTimeout()  {
         var time: Long = 10_000
+
+        val startTime = System.currentTimeMillis()
+
         try{
             runTest(10){
                 delay(10_000)
@@ -68,6 +68,47 @@ class RunnerTest {
             time = System.currentTimeMillis() - startTime
         }
         assert(time < 9_000)
+    }
+
+    @Test fun  cancellationOfJob() = runBlocking {
+        var job: Job? = null
+        try {
+            runTest(10) {
+                job = launch {
+                    delay(10_000)
+                }
+                job!!.join()
+            }
+        }catch(exception : Exception) {
+            println(exception.message)
+        }
+
+        while(job == null){
+            delay(10)
+        }
+        assert(job!!.isCancelled)
+
+    }
+    @Test fun  cancellationOfParallel() = runBlocking {
+        var job: Parallel<Unit>? = null
+        try {
+            runTest(100) {
+                parallel {
+                    job = parallel {
+                        delay(10_000)
+                    }
+                }
+
+            }
+        }catch(exception : Exception) {
+            println(exception.message)
+        }
+
+        while(job == null){
+            delay(10)
+        }
+        assert(job!!.job().isCancelled)
+
     }
 
     @Test fun  self() = runTest{

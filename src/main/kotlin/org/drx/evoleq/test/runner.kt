@@ -36,43 +36,52 @@ val testRunner: SendChannel<TestData> by lazy {
 
             blocked = true
             val change = test.test
-            var error: Throwable? = null
-            Parallel<Unit> {
+            val testFunction =  change.value
+                var error: Throwable? = null
+                val run = Parallel<Unit> {
 
-                var job: Job? = null
-                try {
-                    withTimeout(test.timeout) {
-                        job = launch { change.value( this@withTimeout ) }
-                        job!!.join()
+                    var job: Job? = null
+                    try {
+                        withTimeout(test.timeout) {
+
+                            job = launch { this@withTimeout.testFunction() }
+
+                            job!!.join()
+                        }
+                    } catch (exception: Exception) {
+                        job!!.cancel()
+                        error = exception
+                    } catch (exception: java.lang.Exception) {
+                        job!!.cancel()
+                        error = exception
                     }
-                } catch (exception: Exception) {
-                    job!!.cancel()
-                    error = exception
-                } catch (exception: java.lang.Exception) {
-                    job!!.cancel()
-                    error = exception
-                }
-                catch (assertionError: AssertionError) {
-                    job!!.cancel()
-                    error = assertionError
-                }
-                catch (assertionError: java.lang.AssertionError) {
-                    job!!.cancel()
-                    error = assertionError
-                }
+                    catch (assertionError: AssertionError) {
+                        job!!.cancel()
+                        error = assertionError
+                    }
+                    catch (assertionError: java.lang.AssertionError) {
+                        job!!.cancel()
+                        error = assertionError
+                    }
+                    finally{
+                        Unit
+                    }
 
+                }
+                run.get()
+                if (error == null) {
+                    change.value = { Unit }
+                } else {
+                    run.cancel(Unit).get()
+                    change.value = { throw error!! }
 
-            }.get()
-            if (error == null) {
-                change.value = { Unit }
-            } else {
-                change.value = { throw error!! }
+                }
+                blocked = false
             }
-            blocked = false
         }
 
     }
-}
+
 suspend fun performTest(timeout: Long, test: suspend CoroutineScope.()->Unit): Evolving<suspend CoroutineScope.()->Unit> {
     val change = Change(test)
     val changing = change.happen()
