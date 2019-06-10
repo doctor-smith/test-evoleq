@@ -18,15 +18,21 @@ package org.drx.evoleq.test
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.test.runBlockingTest
+import org.drx.evoleq.dsl.parallel
 import org.drx.evoleq.evolving.Evolving
-import org.drx.evoleq.evolving.Parallel
 import org.drx.evoleq.time.Change
+import org.drx.evoleq.time.change
 import org.drx.evoleq.time.happen
 
-data class TestData(val timeout: Long = 30_000, val test: Change<suspend CoroutineScope.() -> Unit>)
+data class TestData(val timeout: Long = 10_000, val test: Change<suspend CoroutineScope.() -> Unit>)
 
-val testRunner: SendChannel<TestData> by lazy {
-    GlobalScope.actor<TestData>(capacity = 1_000_000) {
+var runner: SendChannel<TestData>? = null
+
+
+fun testRunner(): SendChannel<TestData>  {
+    if(runner == null || (runner != null && runner!!.isClosedForSend)){
+    runner = GlobalScope.actor<TestData>(capacity = 1_000_000) {
         var blocked = false
         for (test in channel) {
 
@@ -38,13 +44,13 @@ val testRunner: SendChannel<TestData> by lazy {
             val change = test.test
             val testFunction =  change.value
                 var error: Throwable? = null
-                val run = Parallel<Unit> {
-
+                val run = GlobalScope.parallel {
+                    this@actor + this.coroutineContext
                     var job: Job? = null
                     try {
-                        withTimeout(test.timeout) {
+                        withTimeout( test.timeout ) {
 
-                            job = launch { this@withTimeout.testFunction() }
+                            job = launch { testFunction() }
 
                             job!!.join()
                         }
@@ -81,14 +87,16 @@ val testRunner: SendChannel<TestData> by lazy {
         }
 
     }
+    return runner!!
+}
 
 suspend fun performTest(timeout: Long, test: suspend CoroutineScope.()->Unit): Evolving<suspend CoroutineScope.()->Unit> {
-    val change = Change(test)
+    val change = GlobalScope.change(test)
     val changing = change.happen()
-    testRunner.send(TestData(timeout,change))
+    testRunner().send(TestData(timeout,change))
     return changing
 }
 
-fun runTest(timeout: Long = 10_000,test: suspend CoroutineScope.()->Unit): Unit = runBlocking {
+fun runTest(timeout: Long = 10_000, test: suspend CoroutineScope.()->Unit): Unit = runBlocking {
     performTest(timeout){test()}.get()()
 }

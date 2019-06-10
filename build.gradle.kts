@@ -27,7 +27,9 @@ dependencies {
     implementation ( kotlin("reflect"))
     implementation (Config.Dependencies.evoleq)
     implementation(Config.Dependencies.junit)
+    implementation ( "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.0-M1" )
 
+    testImplementation ( "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.0-M1" )
     testCompile(Config.Dependencies.junit)
 }
 
