@@ -15,8 +15,8 @@ object Config {
 	}
 
     object Versions {
-        val kotlin = "1.3.30"
-        val coroutines = "1.2.0"
+        val kotlin = "1.3.50"
+        val coroutines = "1.3.1"
         val junit = "4.12"
 		val evoleq = "1.1.0"
     }

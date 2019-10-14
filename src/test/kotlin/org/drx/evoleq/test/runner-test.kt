@@ -107,7 +107,7 @@ class RunnerTest {
         while(job == null){
             delay(10)
         }
-        assert(job!!.job().isCancelled)
+        assert(job!!.job.isCancelled)
 
     }
 
